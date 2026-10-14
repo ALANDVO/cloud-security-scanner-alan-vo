@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "name": "cloud-security-scanner-alan-vo",
+  "owner": "ALANDVO",
+  "email": "alanvo@gmail.com",
+  "domain": "cloud-security",
+  "summary": "Work in progress: cloud-security-scanner-alan-vo",
+  "workflows": [
+    "Create and run security scans across AWS, GCP, and Azure with category and severity filters",
+    "Browse and filter findings by severity, category, and cloud provider with pagination",
+    "View executive dashboard with scan statistics, severity breakdown, and top findings"
+  ],
+  "auth": "oidc-keycloak-saml-broker",
+  "llm_providers": [
+    "openai-compatible",
+    "anthropic",
+    "gemini",
+    "ollama"
+  ],
+  "status": "work-in-progress"
+}
