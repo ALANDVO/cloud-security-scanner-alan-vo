@@ -4,7 +4,7 @@ Each round completes one feature or repair. Future items are planned, not implem
 
 ## Current round
 
-ai-remediation-integration
+ai-executive-summary
 
 ## Roadmap
 
@@ -21,7 +21,7 @@ Acceptance:
 - SQLite persistent storage for scans and findings
 - backend/tests/ with meaningful pytest tests
 
-Implementation: `backend/app/main.py`, `backend/app/core/config.py`, `backend/app/core/database.py`, `backend/app/core/security.py`, `backend/app/models/domain.py`, `backend/app/models/schemas.py`, `backend/app/services/scanner.py`, `backend/app/api/deps.py`, `backend/app/api/routes/health.py`, `backend/app/api/routes/scans.py`, `backend/app/api/routes/findings.py`, `backend/app/api/__init__.py`
+Implementation: `backend/app/main.py`, `backend/app/core/config.py`, `backend/app/core/database.py`, `backend/app/core/security.py`, `backend/app/models/domain.py`, `backend/app/models/schemas.py`, `backend/app/services/scanner.py`, `backend/app/api/deps.py`, `backend/app/api/routes/health.py`, `backend/app/api/routes/scans.py`, `backend/app/api/routes/findings.py`, `backend/app/api/routes/ai.py`, `backend/app/api/__init__.py`
 
 Tests: `backend/tests/conftest.py`, `backend/tests/test_models.py`, `backend/tests/test_scanner.py`, `backend/tests/test_api_scans.py`, `backend/tests/test_api_findings.py`
 
@@ -93,6 +93,21 @@ Acceptance:
 - Proper error handling for missing/invalid LLM credentials
 
 Implementation: `backend/app/services/llm.py`, `backend/app/api/routes/ai.py`, `backend/app/api/__init__.py`, `backend/app/models/schemas.py`, `frontend/src/api/client.ts`, `frontend/src/pages/Findings.tsx`, `backend/tests/test_ai.py`
+
+Tests: `backend/tests/test_ai.py`
+
+### ai-executive-summary — Add AI-powered executive summary for scans
+
+Status: done
+
+Acceptance:
+- API endpoint to generate AI executive summary for a scan (POST /api/ai/executive-summary)
+- Executive summary includes risk rating, key findings, top 3 actions
+- Summary stored in scan.ai_summary field
+- Frontend displays executive summary in scan detail view
+- Proper error handling for missing/invalid LLM credentials
+
+Implementation: `backend/app/models/domain.py`, `backend/app/models/schemas.py`, `backend/app/services/llm.py`, `backend/app/api/routes/ai.py`, `backend/app/api/__init__.py`, `frontend/src/api/client.ts`, `frontend/src/types/index.ts`, `frontend/src/pages/Scans.tsx`
 
 Tests: `backend/tests/test_ai.py`
 

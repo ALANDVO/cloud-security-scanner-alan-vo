@@ -111,3 +111,15 @@ class AIProviderStatus(BaseModel):
     configured: bool
     provider: str
     model: str
+
+
+class AIExecutiveSummaryRequest(BaseModel):
+    scan_id: int
+    regenerate: bool = False
+
+class AIExecutiveSummaryResponse(BaseModel):
+    scan_id: int
+    ai_summary: str
+    provider: str
+    model: str
+    generated_at: datetime

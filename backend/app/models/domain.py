@@ -44,6 +44,7 @@ class Scan(Base):
     started_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     completed_at = Column(DateTime, nullable=True)
     error_message = Column(Text, nullable=True)
+    ai_summary = Column(Text, nullable=True)
 
     findings = relationship("Finding", back_populates="scan", cascade="all, delete-orphan")
 
