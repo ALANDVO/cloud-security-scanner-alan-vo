@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
 ## 1.0.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
@@ -9,23 +13,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0] - 2026-10-14
+## [1.2.0] - 2026-10-21
 
 ### Added
-- AI-powered remediation analysis for security findings
-- Multi-provider LLM service (OpenAI-compatible, Anthropic, Gemini, Ollama)
-- AI remediation API endpoints (POST /api/ai/remediation, GET /api/ai/status, DELETE /api/ai/remediation/{id})
-- AI analysis stored persistently in finding.ai_analysis field
-- Frontend integration with expandable AI remediation panels in Findings page
-- AI provider status indicator with configuration guidance
-- 24 new backend tests for AI providers, service, and API routes
+- AI-powered executive summary for security scans
+- API endpoint to generate executive summary (POST /api/ai/executive-summary)
+- Executive summary includes risk rating, key findings summary, top 3 priority actions, compliance gaps, and strategic recommendations
+- Summary stored persistently in scan.ai_summary field
+- Frontend integration with expandable executive summary panel in Scans page
+- AI provider status indicator with configuration guidance in Scans page
+- 6 new backend tests for executive summary service and API routes
 
 ### Changed
-- Updated backend schemas with AIRemediationRequest, AIRemediationResponse, AIProviderStatus models
-- Extended frontend API client and types with AI remediation methods
-- Enhanced Findings page with AI generation button, loading states, and markdown rendering
-- LLM service now supports OpenAI, Anthropic, Gemini, and Ollama via unified interface
+- Updated Scan model with ai_summary field
+- Extended backend schemas with AIExecutiveSummaryRequest, AIExecutiveSummaryResponse models
+- Extended frontend API client and types with executive summary methods
+- Enhanced Scans page with executive summary generation button, loading states, and markdown rendering
+- LLM service now supports executive summary generation with fallback mode
 
+## [1.1.0] - 2026-10-14
 ## [1.0.1] - 2026-10-14
 ## [1.0.0] - 2026-10-13
 

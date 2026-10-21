@@ -208,6 +208,57 @@ class TestLLMService:
                 assert "AI Analysis Unavailable" in result
                 assert "Demo Mode" in result
 
+    def test_fallback_executive_summary(self):
+        with patch.object(settings, "llm_provider", "openai"):
+            with patch.object(settings, "llm_api_key", None):
+                service = LLMService()
+
+                scan = {
+                    "cloud": "aws",
+                    "findings_count": 5,
+                    "severity_counts": {"critical": 1, "high": 2, "medium": 1, "low": 1, "info": 0},
+                    "by_category": {"storage": 3, "iam": 2},
+                    "by_cloud": {"aws": 5},
+                    "findings": [
+                        {
+                            "finding_id": "aws-storage-bucket1",
+                            "cloud": "aws",
+                            "severity": "critical",
+                            "category": "storage",
+                            "resource": "bucket1",
+                            "title": "Public bucket",
+                            "detail": "Bucket is public",
+                            "remediation": "Make private",
+                            "score": 9.0,
+                        }
+                    ],
+                }
+
+                fallback = service._fallback_executive_summary(scan)
+                assert "AI Executive Summary Unavailable" in fallback
+                assert "Risk Rating: Critical" in fallback
+                assert "Top 3 Priority Actions" in fallback
+                assert "Compliance" in fallback
+
+    @pytest.mark.asyncio
+    async def test_generate_executive_summary_unconfigured(self):
+        with patch.object(settings, "llm_provider", "openai"):
+            with patch.object(settings, "llm_api_key", None):
+                service = LLMService()
+
+                scan = {
+                    "cloud": "aws",
+                    "findings_count": 3,
+                    "severity_counts": {"critical": 0, "high": 1, "medium": 1, "low": 1, "info": 0},
+                    "by_category": {"storage": 2, "iam": 1},
+                    "by_cloud": {"aws": 3},
+                    "findings": [],
+                }
+
+                result = await service.generate_executive_summary(scan)
+                assert "AI Executive Summary Unavailable" in result
+                assert "Demo Mode" in result
+
 
 class TestAIRoutes:
     def test_get_ai_status_unconfigured(self, client, auth_headers):
@@ -388,4 +439,121 @@ class TestAIRoutes:
         assert response.status_code == 204
 
         db_session.refresh(finding)
+        db_session.refresh(finding)
         assert finding.ai_analysis is None
+
+    def test_generate_executive_summary_not_found(self, client, auth_headers):
+        settings.oidc_enabled = True
+        with patch("app.api.deps.verify_token") as mock_verify:
+            mock_verify.return_value = {"sub": "user1", "roles": ["viewer"]}
+            response = client.post("/api/ai/executive-summary", json={"scan_id": 999}, headers=auth_headers)
+
+        assert response.status_code == 404
+        data = response.json()
+        assert "Scan not found" in data["detail"]
+
+    def test_generate_executive_summary_requires_viewer(self, client, auth_headers, db_session):
+        settings.oidc_enabled = True
+
+        scan = Scan(cloud=CloudEnum.aws, status=ScanStatusEnum.completed)
+        db_session.add(scan)
+        db_session.commit()
+        db_session.refresh(scan)
+
+        finding = Finding(
+            scan_id=scan.id,
+            finding_id="aws-storage-test5",
+            severity=SeverityEnum.high,
+            score=7.5,
+            category="storage",
+            resource="test-bucket5",
+            title="S3 bucket public",
+            detail="Bucket allows public access",
+            remediation="Set bucket to private",
+            cloud=CloudEnum.aws,
+        )
+        db_session.add(finding)
+        db_session.commit()
+        db_session.refresh(finding)
+
+        with patch("app.api.deps.verify_token") as mock_verify:
+            mock_verify.return_value = {"sub": "user1", "roles": ["operator"]}
+            with patch("app.services.llm.llm_service.generate_executive_summary", new_callable=AsyncMock) as mock_gen:
+                mock_gen.return_value = "# AI Executive Summary\n\nRisk Rating: High"
+                response = client.post("/api/ai/executive-summary", json={"scan_id": scan.id}, headers=auth_headers)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["ai_summary"] == "# AI Executive Summary\n\nRisk Rating: High"
+        assert data["scan_id"] == scan.id
+        mock_gen.assert_called_once()
+
+    def test_generate_executive_summary_cached(self, client, auth_headers, db_session):
+        settings.oidc_enabled = True
+
+        scan = Scan(cloud=CloudEnum.aws, status=ScanStatusEnum.completed, ai_summary="Existing AI summary")
+        db_session.add(scan)
+        db_session.commit()
+        db_session.refresh(scan)
+
+        finding = Finding(
+            scan_id=scan.id,
+            finding_id="aws-storage-test6",
+            severity=SeverityEnum.high,
+            score=7.5,
+            category="storage",
+            resource="test-bucket6",
+            title="S3 bucket public",
+            detail="Bucket allows public access",
+            remediation="Set bucket to private",
+            cloud=CloudEnum.aws,
+        )
+        db_session.add(finding)
+        db_session.commit()
+        db_session.refresh(finding)
+
+        with patch("app.api.deps.verify_token") as mock_verify:
+            mock_verify.return_value = {"sub": "user1", "roles": ["viewer"]}
+            with patch("app.services.llm.llm_service.generate_executive_summary", new_callable=AsyncMock) as mock_gen:
+                mock_gen.return_value = "# AI Executive Summary\n\nRisk Rating: High"
+                response = client.post("/api/ai/executive-summary", json={"scan_id": scan.id, "regenerate": False}, headers=auth_headers)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["ai_summary"] == "Existing AI summary"
+        mock_gen.assert_not_called()
+
+    def test_generate_executive_summary_regenerate(self, client, auth_headers, db_session):
+        settings.oidc_enabled = True
+
+        scan = Scan(cloud=CloudEnum.aws, status=ScanStatusEnum.completed, ai_summary="Existing AI summary")
+        db_session.add(scan)
+        db_session.commit()
+        db_session.refresh(scan)
+
+        finding = Finding(
+            scan_id=scan.id,
+            finding_id="aws-storage-test7",
+            severity=SeverityEnum.high,
+            score=7.5,
+            category="storage",
+            resource="test-bucket7",
+            title="S3 bucket public",
+            detail="Bucket allows public access",
+            remediation="Set bucket to private",
+            cloud=CloudEnum.aws,
+        )
+        db_session.add(finding)
+        db_session.commit()
+        db_session.refresh(finding)
+
+        with patch("app.api.deps.verify_token") as mock_verify:
+            mock_verify.return_value = {"sub": "user1", "roles": ["viewer"]}
+            with patch("app.services.llm.llm_service.generate_executive_summary", new_callable=AsyncMock) as mock_gen:
+                mock_gen.return_value = "# AI Executive Summary\n\nRisk Rating: High"
+                response = client.post("/api/ai/executive-summary", json={"scan_id": scan.id, "regenerate": True}, headers=auth_headers)
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["ai_summary"] == "# AI Executive Summary\n\nRisk Rating: High"
+        mock_gen.assert_called_once()

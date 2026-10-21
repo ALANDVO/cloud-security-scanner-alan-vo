@@ -84,6 +84,19 @@ export interface AIProviderStatus {
   model: string;
 }
 
+export interface AIExecutiveSummaryRequest {
+  scan_id: number;
+  regenerate?: boolean;
+}
+
+export interface AIExecutiveSummaryResponse {
+  scan_id: number;
+  ai_summary: string;
+  provider: string;
+  model: string;
+  generated_at: string;
+}
+
 export interface User {
   sub: string;
   roles: string[];

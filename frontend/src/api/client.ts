@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
-import type { ScanCreate, ScanResponse, FindingResponse, FindingListResponse, ScanSummary, HealthResponse, AIRemediationRequest, AIRemediationResponse, AIProviderStatus } from '../types';
+import type { ScanCreate, ScanResponse, FindingResponse, FindingListResponse, ScanSummary, HealthResponse, AIRemediationRequest, AIRemediationResponse, AIProviderStatus, AIExecutiveSummaryRequest, AIExecutiveSummaryResponse } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -98,6 +98,11 @@ class ApiClient {
 
   async deleteRemediation(findingId: number): Promise<void> {
     await this.client.delete(`/ai/remediation/${findingId}`);
+  }
+
+  async generateExecutiveSummary(request: AIExecutiveSummaryRequest): Promise<AIExecutiveSummaryResponse> {
+    const response = await this.client.post<AIExecutiveSummaryResponse>('/ai/executive-summary', request);
+    return response.data;
   }
 
   async deleteScan(id: number): Promise<void> {

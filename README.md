@@ -1,4 +1,4 @@
-# cloud-security-scanner-alan-vo
+# cloud-security-scanner-alan-vo — Alan Vo
 
 > Work in progress. This checkpoint may be incomplete or fail tests. See PLAN.md and STATUS.md before use.
 
@@ -124,7 +124,10 @@ npm run dev
 | `DELETE` | `/api/scans/{id}` | Delete scan | Admin |
 | `GET` | `/api/findings` | List all findings | All |
 | `GET` | `/api/findings/stats/summary` | Findings statistics | All |
-
+| `GET` | `/api/ai/status` | AI provider status | All |
+| `POST` | `/api/ai/remediation` | Generate AI remediation for finding | Operator, Admin |
+| `POST` | `/api/ai/executive-summary` | Generate AI executive summary for scan | All |
+| `DELETE` | `/api/ai/remediation/{id}` | Delete AI remediation | Admin |
 ### Demo Accounts (Keycloak)
 
 | Username | Password | Role |
@@ -149,7 +152,7 @@ npm run dev
 
 ## AI/ML Evaluation
 
-The scanner includes an AI-powered remediation engine that uses LLMs to generate contextual remediation guides for security findings.
+The scanner includes AI-powered remediation and executive summary engines that use LLMs to generate contextual remediation guides for security findings and executive summaries for scans.
 
 ### Reproducible Evaluation
 
@@ -173,15 +176,64 @@ print(f'Scan {scan.id}: {scan.findings_count} findings')
 for f in scan.findings[:3]:
     print(f'  {f.severity.value}: {f.title}')
 "
+
+# Generate AI executive summary for a scan
+python -c "
+from backend.app.services.llm import llm_service
+from backend.app.core.database import SessionLocal
+from backend.app.models.domain import Scan, Finding, CloudEnum, ScanStatusEnum, SeverityEnum
+import asyncio
+
+db = SessionLocal()
+scan = db.query(Scan).filter(Scan.id == 1).first()
+if scan:
+    findings = scan.findings
+    finding_data = [
+        {
+            'finding_id': f.finding_id,
+            'cloud': f.cloud.value,
+            'severity': f.severity.value,
+            'category': f.category,
+            'resource': f.resource,
+            'title': f.title,
+            'detail': f.detail,
+            'remediation': f.remediation,
+            'score': f.score,
+        }
+        for f in findings
+    ]
+    scan_data = {
+        'cloud': scan.cloud.value,
+        'region': scan.region,
+        'category': scan.category,
+        'started_at': scan.started_at.isoformat() if scan.started_at else None,
+        'findings_count': scan.findings_count,
+        'severity_counts': {
+            'critical': scan.critical_count,
+            'high': scan.high_count,
+            'medium': scan.medium_count,
+            'low': scan.low_count,
+            'info': scan.info_count,
+        },
+        'by_category': {},
+        'by_cloud': {scan.cloud.value: scan.findings_count},
+        'findings': finding_data,
+    }
+    for f in findings:
+        cat = f.category
+        scan_data['by_category'][cat] = scan_data['by_category'].get(cat, 0) + 1
+    summary = asyncio.run(llm_service.generate_executive_summary(scan_data))
+    print(summary[:500])
+"
 ```
 
 ### Baseline Metrics (Local Testing)
 
 | Cloud | Categories Tested | Findings Detected | AI Analysis Time |
 |-------|------------------|-------------------|------------------|
-| AWS | storage, iam, network, logging | Varies by account | ~2-5s per finding |
-| GCP | storage | Varies by project | ~2-5s per finding |
-| Azure | storage | Varies by subscription | ~2-5s per finding |
+| AWS | storage, iam, network, logging | Varies by account | ~2-5s per finding / ~5-10s per summary |
+| GCP | storage | Varies by project | ~2-5s per finding / ~5-10s per summary |
+| Azure | storage | Varies by subscription | ~2-5s per finding / ~5-10s per summary |
 
 ### Limitations
 
@@ -189,7 +241,6 @@ for f in scan.findings[:3]:
 - AI analysis is advisory only — always verify remediation commands before execution
 - Mock mode available for development without cloud credentials
 - LLM responses may vary; not deterministic
-
 ## Tech Stack
 
 - **Backend**: FastAPI, SQLAlchemy, Pydantic, python-jose, passlib

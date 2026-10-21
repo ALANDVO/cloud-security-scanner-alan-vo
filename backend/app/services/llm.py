@@ -292,6 +292,135 @@ Re-run the security scan to confirm the finding is resolved.
 - CIS Benchmarks for {cloud}
 - NIST Cybersecurity Framework
 """
+    async def generate_executive_summary(self, scan_data: dict) -> str:
+        """Generate AI-powered executive summary for a scan."""
+        if not self.is_configured():
+            return self._fallback_executive_summary(scan_data)
+
+        system_prompt = (
+            "You are a cloud security executive advisor. "
+            "Provide concise, risk-focused executive summaries of security scan results. "
+            "Format as markdown with clear sections. "
+            "Include a risk rating (Critical/High/Medium/Low) and top 3 prioritized actions."
+        )
+
+        prompt = self._build_executive_summary_prompt(scan_data)
+
+        try:
+            response = await self._provider.generate(prompt, system=system_prompt, temperature=0.2, max_tokens=3000)
+            return response.content
+        except httpx.HTTPStatusError as e:
+            error_detail = ""
+            try:
+                error_detail = e.response.json().get("error", {}).get("message", str(e))
+            except Exception:
+                error_detail = str(e)
+            return f"**AI Analysis Unavailable** (Provider error: {error_detail})\n\n{self._fallback_executive_summary(scan_data)}"
+        except Exception as e:
+            return f"**AI Analysis Unavailable** ({type(e).__name__}: {str(e)})\n\n{self._fallback_executive_summary(scan_data)}"
+
+    def _build_executive_summary_prompt(self, scan: dict) -> str:
+        """Build a detailed prompt for executive summary generation."""
+        findings = scan.get("findings", [])
+        severity_counts = scan.get("severity_counts", {})
+        by_category = scan.get("by_category", {})
+        by_cloud = scan.get("by_cloud", {})
+
+        # Get top findings by severity score
+        top_findings = sorted(findings, key=lambda f: f.get("score", 0), reverse=True)[:10]
+        top_findings_str = "\n".join([
+            f"- [{f.get('severity', 'info').upper()}] {f.get('title', 'N/A')} ({f.get('resource', 'N/A')}) - Score: {f.get('score', 0):.1f}"
+            for f in top_findings
+        ])
+
+        return f"""
+Scan Overview:
+- **Cloud Provider**: {scan.get('cloud', 'unknown').upper()}
+- **Region**: {scan.get('region', 'N/A')}
+- **Category**: {scan.get('category', 'All')}
+- **Scan Time**: {scan.get('started_at', 'N/A')}
+- **Total Findings**: {scan.get('findings_count', 0)}
+- **Critical**: {severity_counts.get('critical', 0)} | **High**: {severity_counts.get('high', 0)} | **Medium**: {severity_counts.get('medium', 0)} | **Low**: {severity_counts.get('low', 0)} | **Info**: {severity_counts.get('info', 0)}
+- **By Category**: {by_category}
+- **By Cloud**: {by_cloud}
+
+Top Findings by Risk Score:
+{top_findings_str}
+
+Provide an executive security summary with the following sections:
+
+## 1. Risk Rating
+Assign an overall risk rating: **Critical / High / Medium / Low** with brief justification.
+
+## 2. Key Findings Summary
+Brief narrative (2-3 sentences) summarizing the security posture.
+
+## 3. Top 3 Priority Actions
+List exactly 3 concrete, prioritized actions with:
+- Action description
+- Affected resources
+- Estimated effort (Low/Medium/High)
+- Cloud CLI command or console path
+
+## 4. Compliance & Framework Gaps
+Note any CIS, NIST, or regulatory compliance implications.
+
+## 5. Strategic Recommendations
+2-3 longer-term strategic improvements (IaC policy, guardrails, architecture changes).
+
+Be concise, executive-focused, and action-oriented. Use markdown formatting.
+"""
+
+    def _fallback_executive_summary(self, scan: dict) -> str:
+        """Provide a basic executive summary when AI is unavailable."""
+        findings_count = scan.get("findings_count", 0)
+        critical = scan.get("severity_counts", {}).get("critical", 0)
+        high = scan.get("severity_counts", {}).get("high", 0)
+        cloud = scan.get("cloud", "unknown").upper()
+
+        # Determine risk rating
+        if critical > 0:
+            risk_rating = "Critical"
+        elif high > 0:
+            risk_rating = "High"
+        elif findings_count > 0:
+            risk_rating = "Medium"
+        else:
+            risk_rating = "Low"
+
+        return f"""## AI Executive Summary Unavailable (Demo Mode)
+
+### Risk Rating: {risk_rating}
+Based on {findings_count} findings ({critical} critical, {high} high) in {cloud} scan.
+
+### Key Findings Summary
+This {cloud} security scan detected {findings_count} security findings across storage, IAM, network, and logging configurations. Immediate attention required for critical and high-severity issues.
+
+### Top 3 Priority Actions
+1. **Remediate critical findings** — Address {critical} critical-severity misconfigurations immediately
+   - Affected: See findings list
+   - Effort: High
+   - Command: Re-run scan with specific category to identify exact resources
+
+2. **Review high-severity findings** — Evaluate and remediate {high} high-severity issues
+   - Affected: See findings list
+   - Effort: Medium
+   - Command: Review finding details for specific remediation steps
+
+3. **Enable continuous scanning** — Integrate automated scans into CI/CD pipeline
+   - Affected: All cloud resources
+   - Effort: Low
+   - Command: Configure scheduled scans via API
+
+### Compliance & Framework Gaps
+- CIS Benchmarks: Findings may indicate gaps in CIS {cloud} Foundations
+- NIST CSF: Identify, Protect, and Detect functions need strengthening
+
+### Strategic Recommendations
+- Implement Infrastructure-as-Code policy enforcement (Checkov, tfsec, OPA)
+- Enable cloud provider native security services (Security Hub, Security Command Center, Defender for Cloud)
+- Establish security baseline and drift detection for all environments
+"""
 
 
 # Singleton instance
