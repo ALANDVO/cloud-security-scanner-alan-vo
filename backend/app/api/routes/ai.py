@@ -39,11 +39,11 @@ async def generate_remediation(
     # Check if AI analysis already exists and regenerate is False
     if finding.ai_analysis and not request.regenerate:
         return AIRemediationResponse(
-            finding_id=finding.id,
-            ai_analysis=finding.ai_analysis,
+            finding_id=finding.id,  # type: ignore[arg-type]
+            ai_analysis=finding.ai_analysis,  # type: ignore[arg-type]
             provider=llm_service.get_provider_info().get("provider", "unknown"),
             model=llm_service.get_provider_info().get("model", "unknown"),
-            generated_at=finding.detected_at,
+            generated_at=finding.detected_at,  # type: ignore[arg-type]
         )
 
     # Prepare finding data for LLM
@@ -62,11 +62,11 @@ async def generate_remediation(
     ai_analysis = await llm_service.generate_remediation(finding_data)
 
     # Store in database
-    finding.ai_analysis = ai_analysis
+    finding.ai_analysis = ai_analysis  # type: ignore[assignment]
     db.commit()
 
     return AIRemediationResponse(
-        finding_id=finding.id,
+        finding_id=finding.id,  # type: ignore[arg-type]
         ai_analysis=ai_analysis,
         provider=llm_service.get_provider_info().get("provider", "unknown"),
         model=llm_service.get_provider_info().get("model", "unknown"),
@@ -88,11 +88,11 @@ async def generate_executive_summary(
     # Check if AI summary already exists and regenerate is False
     if scan.ai_summary and not request.regenerate:
         return AIExecutiveSummaryResponse(
-            scan_id=scan.id,
-            ai_summary=scan.ai_summary,
+            scan_id=scan.id,  # type: ignore[arg-type]
+            ai_summary=scan.ai_summary,  # type: ignore[arg-type]
             provider=llm_service.get_provider_info().get("provider", "unknown"),
             model=llm_service.get_provider_info().get("model", "unknown"),
-            generated_at=scan.completed_at or scan.started_at,
+            generated_at=scan.completed_at or scan.started_at,  # type: ignore[arg-type]
         )
 
     # Prepare scan data for LLM
@@ -139,11 +139,11 @@ async def generate_executive_summary(
     ai_summary = await llm_service.generate_executive_summary(scan_data)
 
     # Store in database
-    scan.ai_summary = ai_summary
+    scan.ai_summary = ai_summary  # type: ignore[assignment]
     db.commit()
 
     return AIExecutiveSummaryResponse(
-        scan_id=scan.id,
+        scan_id=scan.id,  # type: ignore[arg-type]
         ai_summary=ai_summary,
         provider=llm_service.get_provider_info().get("provider", "unknown"),
         model=llm_service.get_provider_info().get("model", "unknown"),
@@ -162,5 +162,5 @@ def delete_remediation(
     if not finding:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Finding not found")
 
-    finding.ai_analysis = None
+    finding.ai_analysis = None  # type: ignore[assignment]
     db.commit()

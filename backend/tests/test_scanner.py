@@ -136,8 +136,7 @@ class TestScannerService:
 
         with patch.object(scanner, "scan_aws", side_effect=Exception("AWS error")):
             scan_create = ScanCreate(cloud=CloudEnum.aws)
-            with pytest.raises(Exception):
-                scanner.run_scan(scan_create)
+            result = scanner.run_scan(scan_create)
 
         # Use a new session to query the committed scan
         from sqlalchemy.orm import sessionmaker
@@ -147,6 +146,7 @@ class TestScannerService:
             failed_scan = new_session.query(Scan).filter(Scan.status == ScanStatusEnum.failed).first()
             assert failed_scan is not None
             assert failed_scan.error_message == "AWS error"
+            assert result.status == ScanStatusEnum.failed
         finally:
             new_session.close()
 

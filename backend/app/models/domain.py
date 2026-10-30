@@ -30,11 +30,11 @@ class Scan(Base):
     __tablename__ = "scans"
 
     id = Column(Integer, primary_key=True, index=True)
-    cloud = Column(SQLEnum(CloudEnum), nullable=False, index=True)
+    cloud: "Column[CloudEnum]" = Column(SQLEnum(CloudEnum), nullable=False, index=True)
     region = Column(String(64), nullable=True)
     category = Column(String(64), nullable=True)
     severity_filter = Column(String(16), nullable=True)
-    status = Column(SQLEnum(ScanStatusEnum), default=ScanStatusEnum.pending, nullable=False, index=True)
+    status: "Column[ScanStatusEnum]" = Column(SQLEnum(ScanStatusEnum), default=ScanStatusEnum.pending, nullable=False, index=True)
     findings_count = Column(Integer, default=0)
     critical_count = Column(Integer, default=0)
     high_count = Column(Integer, default=0)
@@ -60,14 +60,14 @@ class Finding(Base):
     id = Column(Integer, primary_key=True, index=True)
     scan_id = Column(Integer, ForeignKey("scans.id", ondelete="CASCADE"), nullable=False, index=True)
     finding_id = Column(String(128), nullable=False, index=True)  # e.g., "aws-storage-bucket-name"
-    severity = Column(SQLEnum(SeverityEnum), nullable=False, index=True)
+    severity: "Column[SeverityEnum]" = Column(SQLEnum(SeverityEnum), nullable=False, index=True)
     score = Column(Float, nullable=False)
     category = Column(String(64), nullable=False, index=True)
     resource = Column(String(256), nullable=False)
     title = Column(String(512), nullable=False)
     detail = Column(Text, nullable=False)
     remediation = Column(Text, nullable=False)
-    cloud = Column(SQLEnum(CloudEnum), nullable=False, index=True)
+    cloud: "Column[CloudEnum]" = Column(SQLEnum(CloudEnum), nullable=False, index=True)
     detected_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     ai_analysis = Column(Text, nullable=True)
 
