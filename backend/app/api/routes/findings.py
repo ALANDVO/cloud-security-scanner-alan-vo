@@ -40,7 +40,9 @@ def list_findings(
             raise HTTPException(status_code=400, detail=f"Invalid cloud: {cloud}")
 
     total = query.count()
-    findings = query.order_by(desc(Finding.score), desc(Finding.detected_at)).offset((page - 1) * page_size).limit(page_size).all()
+    finding_orms = query.order_by(desc(Finding.score), desc(Finding.detected_at)).offset((page - 1) * page_size).limit(page_size).all()
+
+    findings = [FindingResponse.model_validate(f) for f in finding_orms]
 
     return FindingListResponse(
         findings=findings,

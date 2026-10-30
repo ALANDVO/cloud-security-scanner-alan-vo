@@ -117,7 +117,9 @@ def get_scan_findings(
         query = query.filter(Finding.category == category)
 
     total = query.count()
-    findings = query.order_by(Finding.score.desc()).offset((page - 1) * page_size).limit(page_size).all()
+    finding_orms = query.order_by(Finding.score.desc()).offset((page - 1) * page_size).limit(page_size).all()
+
+    findings = [FindingResponse.model_validate(f) for f in finding_orms]
 
     return FindingListResponse(
         findings=findings,

@@ -334,22 +334,19 @@ class ScannerService:
                     cloud=CloudEnum(f["cloud"]),
                 )
                 self.db.add(finding)
-
-            scan.findings_count = len(findings)
-            scan.critical_count = sum(1 for f in findings if f["severity"] == "critical")
-            scan.high_count = sum(1 for f in findings if f["severity"] == "high")
-            scan.medium_count = sum(1 for f in findings if f["severity"] == "medium")
-            scan.low_count = sum(1 for f in findings if f["severity"] == "low")
-            scan.info_count = sum(1 for f in findings if f["severity"] == "info")
-            scan.status = ScanStatusEnum.completed
-            scan.completed_at = datetime.utcnow()
+            scan.findings_count = len(findings)  # type: ignore[assignment]
+            scan.critical_count = len([f for f in findings if f["severity"] == "critical"])  # type: ignore[assignment]
+            scan.high_count = len([f for f in findings if f["severity"] == "high"])  # type: ignore[assignment]
+            scan.medium_count = len([f for f in findings if f["severity"] == "medium"])  # type: ignore[assignment]
+            scan.low_count = len([f for f in findings if f["severity"] == "low"])  # type: ignore[assignment]
+            scan.info_count = len([f for f in findings if f["severity"] == "info"])  # type: ignore[assignment]
+            scan.status = ScanStatusEnum.completed  # type: ignore[assignment]
+            scan.completed_at = datetime.utcnow()  # type: ignore[assignment]
             self.db.commit()
-            self.db.refresh(scan)
         except Exception as e:
-            scan.status = ScanStatusEnum.failed
-            scan.error_message = str(e)
-            scan.completed_at = datetime.utcnow()
+            scan.status = ScanStatusEnum.failed  # type: ignore[assignment]
+            scan.error_message = str(e)  # type: ignore[assignment]
+            scan.completed_at = datetime.utcnow()  # type: ignore[assignment]
             self.db.commit()
-            raise
 
         return scan

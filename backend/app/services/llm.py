@@ -19,6 +19,8 @@ class LLMResponse:
 class LLMProvider(ABC):
     """Abstract base class for LLM providers."""
 
+    model: str
+
     @abstractmethod
     async def generate(self, prompt: str, system: str = "", temperature: float = 0.3, max_tokens: int = 2048) -> LLMResponse:
         """Generate a response from the LLM."""
@@ -211,7 +213,10 @@ class LLMService:
         prompt = self._build_remediation_prompt(finding_data)
 
         try:
-            response = await self._provider.generate(prompt, system=system_prompt, temperature=0.2, max_tokens=3000)
+            # _provider is guaranteed non-None after is_configured() check
+            provider = self._provider
+            assert provider is not None
+            response = await provider.generate(prompt, system=system_prompt, temperature=0.2, max_tokens=3000)
             return response.content
         except httpx.HTTPStatusError as e:
             error_detail = ""
@@ -307,7 +312,10 @@ Re-run the security scan to confirm the finding is resolved.
         prompt = self._build_executive_summary_prompt(scan_data)
 
         try:
-            response = await self._provider.generate(prompt, system=system_prompt, temperature=0.2, max_tokens=3000)
+            # _provider is guaranteed non-None after is_configured() check
+            provider = self._provider
+            assert provider is not None
+            response = await provider.generate(prompt, system=system_prompt, temperature=0.2, max_tokens=3000)
             return response.content
         except httpx.HTTPStatusError as e:
             error_detail = ""

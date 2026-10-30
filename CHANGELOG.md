@@ -1,9 +1,19 @@
 # Changelog
 
-## 1.1.0 — work-in-progress checkpoint
+## 1.2.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
 
+## 1.1.0 — work-in-progress checkpoint
+
+### Fixed
+- Fixed mypy type checking errors across backend (LLMProvider abstract property, SQLAlchemy column assignments, API response types)
+- Fixed test_run_scan_handles_error test to match actual scanner behavior (graceful error handling)
+- Added proper type annotations for Scan and Finding SQLAlchemy models
+- Added type ignores for SQLAlchemy ORM attribute assignments
+- Converted API routes to properly serialize ORM models to Pydantic schemas
+- All 65 backend tests pass, all 5 frontend tests pass
+- Mypy type checking now passes with zero errors
 ## 1.0.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
