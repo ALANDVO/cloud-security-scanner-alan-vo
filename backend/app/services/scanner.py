@@ -1,7 +1,7 @@
 import os
 import json
 import boto3
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
 
@@ -47,7 +47,7 @@ class ScannerService:
             "detail": detail,
             "remediation": remediation,
             "cloud": cloud,
-            "detected_at": datetime.utcnow().isoformat(),
+            "detected_at": datetime.now(timezone.utc).isoformat(),
         }
         self.findings_buffer.append(finding)
         return finding
@@ -147,8 +147,7 @@ class ScannerService:
                 try:
                     keys = iam.list_access_keys(UserName=uname).get("AccessKeyMetadata", [])
                     for k in keys:
-                        if k.get("Status") == "Active" and k.get("CreateDate"):
-                            age = (datetime.utcnow() - k["CreateDate"]).days
+                            age = (datetime.now(timezone.utc) - k["CreateDate"]).days
                             if age > 90:
                                 self._add_finding(
                                     "medium",
@@ -341,12 +340,11 @@ class ScannerService:
             scan.low_count = len([f for f in findings if f["severity"] == "low"])  # type: ignore[assignment]
             scan.info_count = len([f for f in findings if f["severity"] == "info"])  # type: ignore[assignment]
             scan.status = ScanStatusEnum.completed  # type: ignore[assignment]
-            scan.completed_at = datetime.utcnow()  # type: ignore[assignment]
-            self.db.commit()
+            scan.completed_at = datetime.now(timezone.utc)  # type: ignore[assignment]
         except Exception as e:
             scan.status = ScanStatusEnum.failed  # type: ignore[assignment]
             scan.error_message = str(e)  # type: ignore[assignment]
-            scan.completed_at = datetime.utcnow()  # type: ignore[assignment]
+            scan.completed_at = datetime.now(timezone.utc)  # type: ignore[assignment]
             self.db.commit()
 
         return scan
