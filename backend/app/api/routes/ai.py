@@ -1,5 +1,5 @@
 """AI remediation API endpoints."""
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -70,7 +70,7 @@ async def generate_remediation(
         ai_analysis=ai_analysis,
         provider=llm_service.get_provider_info().get("provider", "unknown"),
         model=llm_service.get_provider_info().get("model", "unknown"),
-        generated_at=datetime.utcnow(),
+        generated_at=datetime.now(timezone.utc),
     )
 
 
@@ -147,7 +147,7 @@ async def generate_executive_summary(
         ai_summary=ai_summary,
         provider=llm_service.get_provider_info().get("provider", "unknown"),
         model=llm_service.get_provider_info().get("model", "unknown"),
-        generated_at=datetime.utcnow(),
+        generated_at=datetime.now(timezone.utc),
     )
 
 

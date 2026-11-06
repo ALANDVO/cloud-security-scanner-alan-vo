@@ -1,9 +1,20 @@
 # Changelog
 
+## 1.3.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
 ## 1.2.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
 
+## 1.3.0 — work-in-progress checkpoint
+
+### Fixed
+- Fixed `datetime.utcnow()` deprecation warnings across backend (scanner, LLM service, AI routes, domain models, security)
+- Replaced with timezone-aware `datetime.now(timezone.utc)` for Python 3.12+ compatibility
+- SQLAlchemy column defaults updated to use callable lambdas with timezone-aware UTC timestamps
+- All 65 backend tests pass, all 5 frontend tests pass
 ## 1.1.0 — work-in-progress checkpoint
 
 ### Fixed

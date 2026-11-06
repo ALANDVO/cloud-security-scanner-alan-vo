@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, Float, ForeignKey, Enum as SQLEnum, Index
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 import enum
 from ..core.database import Base
 
@@ -41,7 +41,7 @@ class Scan(Base):
     medium_count = Column(Integer, default=0)
     low_count = Column(Integer, default=0)
     info_count = Column(Integer, default=0)
-    started_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    started_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     completed_at = Column(DateTime, nullable=True)
     error_message = Column(Text, nullable=True)
     ai_summary = Column(Text, nullable=True)
@@ -68,7 +68,7 @@ class Finding(Base):
     detail = Column(Text, nullable=False)
     remediation = Column(Text, nullable=False)
     cloud: "Column[CloudEnum]" = Column(SQLEnum(CloudEnum), nullable=False, index=True)
-    detected_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    detected_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     ai_analysis = Column(Text, nullable=True)
 
     scan = relationship("Scan", back_populates="findings")
