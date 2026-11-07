@@ -91,3 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JSON report export
 - LLM-powered remediation guides
 - Basic Docker support
+
+---
+
+Alan Vo · [alanvo.net](https://alanvo.net)

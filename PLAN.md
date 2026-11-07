@@ -111,3 +111,6 @@ Implementation: `backend/app/models/domain.py`, `backend/app/models/schemas.py`,
 
 Tests: `backend/tests/test_ai.py`
 
+---
+
+Alan Vo · [alanvo.net](https://alanvo.net)

@@ -274,3 +274,7 @@ MIT — see [LICENSE](LICENSE)
 ---
 
 **Built by [Alan Vo](https://github.com/ALANDVO)** | alanvo@gmail.com | AI, ML & Cybersecurity
+
+---
+
+Alan Vo · [alanvo.net](https://alanvo.net)
