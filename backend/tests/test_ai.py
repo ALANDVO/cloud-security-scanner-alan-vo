@@ -58,6 +58,51 @@ class TestOpenAICompatibleProvider:
             with pytest.raises(Exception):
                 await provider.generate("Test prompt")
 
+    @pytest.mark.asyncio
+    async def test_generate_empty_choices(self):
+        provider = OpenAICompatibleProvider(api_key="test-key", base_url="https://api.openai.com/v1", model="gpt-4o")
+
+        mock_response = {"choices": []}
+
+        with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+            mock_post.return_value = MagicMock(
+                raise_for_status=lambda: None,
+                json=lambda: mock_response,
+            )
+
+            with pytest.raises(ValueError, match="missing or empty 'choices' array"):
+                await provider.generate("Test prompt")
+
+    @pytest.mark.asyncio
+    async def test_generate_missing_message(self):
+        provider = OpenAICompatibleProvider(api_key="test-key", base_url="https://api.openai.com/v1", model="gpt-4o")
+
+        mock_response = {"choices": [{}]}
+
+        with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+            mock_post.return_value = MagicMock(
+                raise_for_status=lambda: None,
+                json=lambda: mock_response,
+            )
+
+            with pytest.raises(ValueError, match="missing 'message' in choice"):
+                await provider.generate("Test prompt")
+
+    @pytest.mark.asyncio
+    async def test_generate_missing_content(self):
+        provider = OpenAICompatibleProvider(api_key="test-key", base_url="https://api.openai.com/v1", model="gpt-4o")
+
+        mock_response = {"choices": [{"message": {}}]}
+
+        with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+            mock_post.return_value = MagicMock(
+                raise_for_status=lambda: None,
+                json=lambda: mock_response,
+            )
+
+            with pytest.raises(ValueError, match="missing 'message' in choice"):
+                await provider.generate("Test prompt")
+
 
 class TestAnthropicProvider:
     def test_is_configured_with_key(self):
@@ -73,7 +118,7 @@ class TestAnthropicProvider:
         provider = AnthropicProvider(api_key="test-key", base_url="https://api.anthropic.com", model="claude-3-opus")
 
         mock_response = {
-            "content": [{"text": "Test remediation guide"}],
+            "content": [{"type": "text", "text": "Test remediation guide"}],
             "usage": {"input_tokens": 50, "output_tokens": 50},
         }
 
@@ -88,6 +133,51 @@ class TestAnthropicProvider:
         assert response.content == "Test remediation guide"
         assert response.provider == "anthropic"
         assert response.model == "claude-3-opus"
+
+    @pytest.mark.asyncio
+    async def test_generate_empty_content(self):
+        provider = AnthropicProvider(api_key="test-key", base_url="https://api.anthropic.com", model="claude-3-opus")
+
+        mock_response = {"content": []}
+
+        with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+            mock_post.return_value = MagicMock(
+                raise_for_status=lambda: None,
+                json=lambda: mock_response,
+            )
+
+            with pytest.raises(ValueError, match="missing or empty 'content' array"):
+                await provider.generate("Test prompt")
+
+    @pytest.mark.asyncio
+    async def test_generate_non_text_content(self):
+        provider = AnthropicProvider(api_key="test-key", base_url="https://api.anthropic.com", model="claude-3-opus")
+
+        mock_response = {"content": [{"type": "tool_use", "id": "123", "name": "tool"}]}
+
+        with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+            mock_post.return_value = MagicMock(
+                raise_for_status=lambda: None,
+                json=lambda: mock_response,
+            )
+
+            with pytest.raises(ValueError, match="missing 'text' content"):
+                await provider.generate("Test prompt")
+
+    @pytest.mark.asyncio
+    async def test_generate_missing_text(self):
+        provider = AnthropicProvider(api_key="test-key", base_url="https://api.anthropic.com", model="claude-3-opus")
+
+        mock_response = {"content": [{"type": "text"}]}
+
+        with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+            mock_post.return_value = MagicMock(
+                raise_for_status=lambda: None,
+                json=lambda: mock_response,
+            )
+
+            with pytest.raises(ValueError, match="missing or empty 'text' in content"):
+                await provider.generate("Test prompt")
 
 
 class TestGeminiProvider:
@@ -119,6 +209,66 @@ class TestGeminiProvider:
         assert response.content == "Test remediation guide"
         assert response.provider == "gemini"
         assert response.model == "gemini-1.5-pro"
+
+    @pytest.mark.asyncio
+    async def test_generate_empty_candidates(self):
+        provider = GeminiProvider(api_key="test-key", base_url="https://generativelanguage.googleapis.com", model="gemini-1.5-pro")
+
+        mock_response = {"candidates": []}
+
+        with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+            mock_post.return_value = MagicMock(
+                raise_for_status=lambda: None,
+                json=lambda: mock_response,
+            )
+
+            with pytest.raises(ValueError, match="missing or empty 'candidates' array"):
+                await provider.generate("Test prompt")
+
+    @pytest.mark.asyncio
+    async def test_generate_missing_content(self):
+        provider = GeminiProvider(api_key="test-key", base_url="https://generativelanguage.googleapis.com", model="gemini-1.5-pro")
+
+        mock_response = {"candidates": [{}]}
+
+        with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+            mock_post.return_value = MagicMock(
+                raise_for_status=lambda: None,
+                json=lambda: mock_response,
+            )
+
+            with pytest.raises(ValueError, match="missing 'content' in candidate"):
+                await provider.generate("Test prompt")
+
+    @pytest.mark.asyncio
+    async def test_generate_missing_parts(self):
+        provider = GeminiProvider(api_key="test-key", base_url="https://generativelanguage.googleapis.com", model="gemini-1.5-pro")
+
+        mock_response = {"candidates": [{"content": {}}]}
+
+        with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+            mock_post.return_value = MagicMock(
+                raise_for_status=lambda: None,
+                json=lambda: mock_response,
+            )
+
+            with pytest.raises(ValueError, match="missing 'content' in candidate"):
+                await provider.generate("Test prompt")
+
+    @pytest.mark.asyncio
+    async def test_generate_missing_text(self):
+        provider = GeminiProvider(api_key="test-key", base_url="https://generativelanguage.googleapis.com", model="gemini-1.5-pro")
+
+        mock_response = {"candidates": [{"content": {"parts": [{}]}}]}
+
+        with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
+            mock_post.return_value = MagicMock(
+                raise_for_status=lambda: None,
+                json=lambda: mock_response,
+            )
+
+            with pytest.raises(ValueError, match="missing or empty 'text' in part"):
+                await provider.generate("Test prompt")
 
 
 class TestLLMService:
