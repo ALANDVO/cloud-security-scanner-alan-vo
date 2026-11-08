@@ -60,8 +60,20 @@ class OpenAICompatibleProvider(LLMProvider):
             response.raise_for_status()
             data = response.json()
 
+        # Defensive parsing for OpenAI-compatible responses
+        choices = data.get("choices")
+        if not choices or not isinstance(choices, list) or len(choices) == 0:
+            raise ValueError("Invalid response from LLM provider: missing or empty 'choices' array")
+        first_choice = choices[0]
+        message = first_choice.get("message") if isinstance(first_choice, dict) else None
+        if not message or not isinstance(message, dict):
+            raise ValueError("Invalid response from LLM provider: missing 'message' in choice")
+        content = message.get("content")
+        if not content or not isinstance(content, str):
+            raise ValueError("Invalid response from LLM provider: missing or empty 'content' in message")
+
         return LLMResponse(
-            content=data["choices"][0]["message"]["content"],
+            content=content,
             provider="openai-compatible",
             model=self.model,
             usage=data.get("usage"),
@@ -104,8 +116,19 @@ class AnthropicProvider(LLMProvider):
             response.raise_for_status()
             data = response.json()
 
+        # Defensive parsing for Anthropic responses
+        content_list = data.get("content")
+        if not content_list or not isinstance(content_list, list) or len(content_list) == 0:
+            raise ValueError("Invalid response from Anthropic provider: missing or empty 'content' array")
+        first_content = content_list[0]
+        if not isinstance(first_content, dict) or first_content.get("type") != "text":
+            raise ValueError("Invalid response from Anthropic provider: missing 'text' content")
+        text = first_content.get("text")
+        if not text or not isinstance(text, str):
+            raise ValueError("Invalid response from Anthropic provider: missing or empty 'text' in content")
+
         return LLMResponse(
-            content=data["content"][0]["text"],
+            content=text,
             provider="anthropic",
             model=self.model,
             usage=data.get("usage"),
@@ -143,10 +166,28 @@ class GeminiProvider(LLMProvider):
             response.raise_for_status()
             data = response.json()
 
-        content_text = data["candidates"][0]["content"]["parts"][0]["text"]
+        # Defensive parsing for Gemini responses
+        candidates = data.get("candidates")
+        if not candidates or not isinstance(candidates, list) or len(candidates) == 0:
+            raise ValueError("Invalid response from Gemini provider: missing or empty 'candidates' array")
+        first_candidate = candidates[0]
+        if not isinstance(first_candidate, dict):
+            raise ValueError("Invalid response from Gemini provider: invalid candidate structure")
+        content_obj = first_candidate.get("content")
+        if not content_obj or not isinstance(content_obj, dict):
+            raise ValueError("Invalid response from Gemini provider: missing 'content' in candidate")
+        parts = content_obj.get("parts")
+        if not parts or not isinstance(parts, list) or len(parts) == 0:
+            raise ValueError("Invalid response from Gemini provider: missing or empty 'parts' array")
+        first_part = parts[0]
+        if not isinstance(first_part, dict):
+            raise ValueError("Invalid response from Gemini provider: invalid part structure")
+        text = first_part.get("text")
+        if not text or not isinstance(text, str):
+            raise ValueError("Invalid response from Gemini provider: missing or empty 'text' in part")
 
         return LLMResponse(
-            content=content_text,
+            content=text,
             provider="gemini",
             model=self.model,
             usage=data.get("usageMetadata"),

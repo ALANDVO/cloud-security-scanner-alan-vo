@@ -111,6 +111,22 @@ Implementation: `backend/app/models/domain.py`, `backend/app/models/schemas.py`,
 
 Tests: `backend/tests/test_ai.py`
 
+### llm-defensive-parsing — Add defensive parsing for LLM provider responses
+
+Status: done
+
+Acceptance:
+- OpenAI-compatible provider validates response structure (choices, message, content)
+- Anthropic provider validates response structure (content array, type, text)
+- Gemini provider validates response structure (candidates, content, parts, text)
+- Clear error messages for malformed responses
+- All existing tests pass
+- New edge case tests added for all three providers
+
+Implementation: `backend/app/services/llm.py`, `backend/tests/test_ai.py`
+
+Tests: `backend/tests/test_ai.py::TestOpenAICompatibleProvider::test_generate_empty_choices`, `backend/tests/test_ai.py::TestOpenAICompatibleProvider::test_generate_missing_message`, `backend/tests/test_ai.py::TestOpenAICompatibleProvider::test_generate_missing_content`, `backend/tests/test_ai.py::TestAnthropicProvider::test_generate_empty_content`, `backend/tests/test_ai.py::TestAnthropicProvider::test_generate_non_text_content`, `backend/tests/test_ai.py::TestAnthropicProvider::test_generate_missing_text`, `backend/tests/test_ai.py::TestGeminiProvider::test_generate_empty_candidates`, `backend/tests/test_ai.py::TestGeminiProvider::test_generate_missing_content`, `backend/tests/test_ai.py::TestGeminiProvider::test_generate_missing_parts`, `backend/tests/test_ai.py::TestGeminiProvider::test_generate_missing_text`
+
 ---
 
 Alan Vo · [alanvo.net](https://alanvo.net) · [X: @alanvoasi](https://x.com/alanvoasi)
