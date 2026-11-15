@@ -100,7 +100,7 @@ class TestOpenAICompatibleProvider:
                 json=lambda: mock_response,
             )
 
-            with pytest.raises(ValueError, match="missing 'message' in choice"):
+            with pytest.raises(ValueError, match="missing or empty 'content' in message"):
                 await provider.generate("Test prompt")
 
 
