@@ -92,7 +92,7 @@ class TestOpenAICompatibleProvider:
     async def test_generate_missing_content(self):
         provider = OpenAICompatibleProvider(api_key="test-key", base_url="https://api.openai.com/v1", model="gpt-4o")
 
-        mock_response = {"choices": [{"message": {}}]}
+        mock_response = {"choices": [{"message": {"extra": "data"}}]}
 
         with patch("httpx.AsyncClient.post", new_callable=AsyncMock) as mock_post:
             mock_post.return_value = MagicMock(
